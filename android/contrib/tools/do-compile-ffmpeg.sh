@@ -79,6 +79,7 @@ if [ "$FF_ARCH" = "armv7a" ]; then
     FF_BUILD_NAME=ffmpeg-armv7a
     FF_BUILD_NAME_OPENSSL=openssl-armv7a
     FF_BUILD_NAME_LIBSOXR=libsoxr-armv7a
+    FF_BUILD_NAME_LIBX264=x264-armv7a
     FF_SOURCE=$FF_BUILD_ROOT/$FF_BUILD_NAME
 
     FF_CROSS_PREFIX=arm-linux-androideabi
@@ -97,6 +98,7 @@ elif [ "$FF_ARCH" = "armv5" ]; then
     FF_BUILD_NAME=ffmpeg-armv5
     FF_BUILD_NAME_OPENSSL=openssl-armv5
     FF_BUILD_NAME_LIBSOXR=libsoxr-armv5
+    FF_BUILD_NAME_LIBX264=x264-armv5
     FF_SOURCE=$FF_BUILD_ROOT/$FF_BUILD_NAME
 
     FF_CROSS_PREFIX=arm-linux-androideabi
@@ -113,6 +115,7 @@ elif [ "$FF_ARCH" = "x86" ]; then
     FF_BUILD_NAME=ffmpeg-x86
     FF_BUILD_NAME_OPENSSL=openssl-x86
     FF_BUILD_NAME_LIBSOXR=libsoxr-x86
+    FF_BUILD_NAME_LIBX264=x264-x86
     FF_SOURCE=$FF_BUILD_ROOT/$FF_BUILD_NAME
 
     FF_CROSS_PREFIX=i686-linux-android
@@ -131,6 +134,7 @@ elif [ "$FF_ARCH" = "x86_64" ]; then
     FF_BUILD_NAME=ffmpeg-x86_64
     FF_BUILD_NAME_OPENSSL=openssl-x86_64
     FF_BUILD_NAME_LIBSOXR=libsoxr-x86_64
+    FF_BUILD_NAME_LIBX264=x264-x86_64
     FF_SOURCE=$FF_BUILD_ROOT/$FF_BUILD_NAME
 
     FF_CROSS_PREFIX=x86_64-linux-android
@@ -149,6 +153,7 @@ elif [ "$FF_ARCH" = "arm64" ]; then
     FF_BUILD_NAME=ffmpeg-arm64
     FF_BUILD_NAME_OPENSSL=openssl-arm64
     FF_BUILD_NAME_LIBSOXR=libsoxr-arm64
+    FF_BUILD_NAME_LIBX264=x264-arm64
     FF_SOURCE=$FF_BUILD_ROOT/$FF_BUILD_NAME
 
     FF_CROSS_PREFIX=aarch64-linux-android
@@ -184,6 +189,8 @@ FF_DEP_OPENSSL_INC=$FF_BUILD_ROOT/build/$FF_BUILD_NAME_OPENSSL/output/include
 FF_DEP_OPENSSL_LIB=$FF_BUILD_ROOT/build/$FF_BUILD_NAME_OPENSSL/output/lib
 FF_DEP_LIBSOXR_INC=$FF_BUILD_ROOT/build/$FF_BUILD_NAME_LIBSOXR/output/include
 FF_DEP_LIBSOXR_LIB=$FF_BUILD_ROOT/build/$FF_BUILD_NAME_LIBSOXR/output/lib
+FF_DEP_LIBX264_INC=$FF_BUILD_ROOT/build/$FF_BUILD_NAME_LIBX264/output/include
+FF_DEP_LIBX264_LIB=$FF_BUILD_ROOT/build/$FF_BUILD_NAME_LIBX264/output/lib
 
 case "$UNAME_S" in
     CYGWIN_NT-*)
@@ -258,6 +265,14 @@ if [ -f "${FF_DEP_LIBSOXR_LIB}/libsoxr.a" ]; then
     FF_DEP_LIBS="$FF_DEP_LIBS -L${FF_DEP_LIBSOXR_LIB} -lsoxr"
 fi
 
+if [ -f "${FF_DEP_LIBX264_LIB}/libx264.a" ]; then
+    echo "libx264 detected"
+    FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-libx264"
+
+    FF_CFLAGS="$FF_CFLAGS -I${FF_DEP_LIBX264_INC}"
+    FF_DEP_LIBS="$FF_DEP_LIBS -L${FF_DEP_LIBX264_LIB} -lx264 -lm -ldl"
+fi
+
 FF_CFG_FLAGS="$FF_CFG_FLAGS $COMMON_FF_CFG_FLAGS"
 
 #--------------------
@@ -298,15 +313,20 @@ echo "--------------------"
 echo "[*] configurate ffmpeg"
 echo "--------------------"
 cd $FF_SOURCE
-if [ -f "./config.h" ]; then
-    echo 'reuse configure'
-else
+# if [ -f "./config.h" ]; then
+#     echo 'reuse configure'
+# else
     which $CC
+    echo "---------------------------------------------------------------"
+    echo "./configure $FF_CFG_FLAGS \
+        --extra-cflags=\"$FF_CFLAGS $FF_EXTRA_CFLAGS\" \
+        --extra-ldflags=\"$FF_DEP_LIBS $FF_EXTRA_LDFLAGS\""
+    echo "---------------------------------------------------------------"
     ./configure $FF_CFG_FLAGS \
         --extra-cflags="$FF_CFLAGS $FF_EXTRA_CFLAGS" \
         --extra-ldflags="$FF_DEP_LIBS $FF_EXTRA_LDFLAGS"
     make clean
-fi
+# fi
 
 #--------------------
 echo ""
